@@ -6,27 +6,8 @@ on:
     types: build-and-release
 
 jobs:
-  release-wheel:
-    name: Build release wheel
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-      - name: Build and release wheel
-        run: |
-          pip install wheel
-          python setup.py bdist_wheel
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_token }}
   release-armory-docker:
     name: Build and release armory docker image
-    needs: [release-wheel]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -48,7 +29,7 @@ jobs:
           docker push twosixarmory/armory:latest
   release-tf1-docker:
     name: Build and release tf1 docker image
-    needs: [release-wheel, release-armory-docker]
+    needs: [release-armory-docker]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -69,49 +50,3 @@ jobs:
           docker push twosixarmory/tf1:${version}
           docker tag twosixarmory/tf1:${version} twosixarmory/tf1:latest
           docker push twosixarmory/tf1:latest
-  release-tf2-docker:
-    name: Build and release tf2 docker image
-    needs: [release-wheel, release-armory-docker]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-      - name: Build and release docker images
-        run: |
-          rm -rf /usr/share/dotnet &
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          docker pull twosixarmory/armory:${version}
-          docker pull twosixarmory/tf2:latest
-          bash docker/build.sh tf2
-          docker push twosixarmory/tf2:${version}
-          docker tag twosixarmory/tf2:${version} twosixarmory/tf2:latest
-          docker push twosixarmory/tf2:latest
-  release-pytorch-docker:
-    name: Build and release pytorch docker image
-    needs: [release-wheel, release-armory-docker]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-      - name: Build and release docker images
-        run: |
-          rm -rf /usr/share/dotnet &
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          docker pull twosixarmory/armory:${version}
-          docker pull twosixarmory/pytorch:latest
-          bash docker/build.sh pytorch
-          docker push twosixarmory/pytorch:${version}
-          docker tag twosixarmory/pytorch:${version} twosixarmory/pytorch:latest
-          docker push twosixarmory/pytorch:latest
