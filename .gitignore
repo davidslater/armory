@@ -2,6 +2,8 @@
 /datasets/
 /tmp/
 /outputs/
+/art/
+/art
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
